@@ -37,14 +37,24 @@ install_bats
 function echo_path_code {
     echo "# Added by eviltest"
     echo "PATH=$HOME/.bats/bin:\$PATH"
+    echo "BATS_LIB_PATH=$HOME/.bats/lib"
+    echo "export BATS_LIB_PATH"
     echo "export PATH"
     echo "# End by eviltest"
 
 }
 
+function echo_path_code_fish {
+    echo "# Added by eviltest"
+    echo "fish_add_path -g \"$HOME/.bats/bin\""
+    echo "set -gx BATS_LIB_PATH \"$HOME/.bats/lib\""
+    echo "# End by eviltest"
+}
+
 function rm_old_path_code {
 
     local shprof=$1
+    local size=$2
     local tmpfile
     local B
     local E
@@ -52,7 +62,7 @@ function rm_old_path_code {
     B=$(grep -n "# Added by eviltest" "$shprof" | cut -f1 -d':' | head -n1)
     E=$(grep -n "# End by eviltest" "$shprof" | cut -f1 -d':' | head -n1)
 
-    if ((E - B == 3)); then
+    if ((E - B == size - 1)); then
         cp "$shprof" "$shprof".bak
         tmpfile=$(mktemp)
         {
@@ -66,20 +76,30 @@ function rm_old_path_code {
 function edit_shell_profile {
     local shprof
     local shell
+    local size
 
     shell=$(get_shell)
 
     if [ "$shell" = "fish" ]; then
-        fish -c "fish_add_path \"$HOME/.bats/bin\""
+        shprof=$HOME/.config/fish/config.fish
+
+        size=$(echo_path_code_fish | wc -l | xargs)
+        rm_old_path_code "$shprof" "$size"
+        echo_path_code_fish >>"$shprof"
+
     elif [ "$shell" = "zsh" ]; then
-        shprof="$HOME/.zprofile"
-        rm_old_path_code "$shprof"
+        shprof=$HOME/.zprofile
+
+        size=$(echo_path_code | wc -l | xargs)
+        rm_old_path_code "$shprof" "$size"
+
         echo_path_code >>"$shprof"
     else
-        for name in .profile .bash_profile; do
-            shprof="$HOME/$name"
+        for name in .profile .bash_profile .bashrc; do
+            shprof=$HOME/$name
             if test -f "$shprof"; then
-                rm_old_path_code "$shprof"
+                size=$(echo_path_code_fish | wc -l | xargs)
+                rm_old_path_code "$shprof" "$size"
                 echo_path_code >>"$shprof"
                 break
             fi
