@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+test -d "$(PWD)"
+
+url="https://github.com/bats-core/bats-core/archive/v1.8.0.tar.gz"
+sha256="0d4c44823905af5e52a92f9164595c183fb0d0b43b0c4e9c9acf794af20468b7"
+tmpdir=$(PWD)/.eviltest
+tarfile=$(resolve_url_filename "$url")
+shafile=$tarfile.sha256
+
+rm -rf "$tmpdir"
+mkdir -p "$tmpdir"
+
+function cleanup {
+    rm -rf "$tmpdir"
+}
+trap cleanup EXIT
+
+cd "$tmpdir"
+
+function fetch_bats {
+    echo "$sha256  $tarfile" >"$shafile"
+    curl --no-progress-meter -OL "$url"
+    sha256sum -c "$shafile"
+    tar xzf "$tarfile"
+}
+fetch_bats
+
+function install_bats {
+    bats_installer="$(tar -tf "$tarfile" | head -n1)install.sh"
+    "$bats_installer" "$HOME/.bats"
+}
+install_bats
