@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#
 set -e
 test -d "$(PWD)"
 
@@ -28,7 +28,63 @@ function fetch_bats {
 fetch_bats
 
 function install_bats {
+    local bats_installer
     bats_installer="$(tar -tf "$tarfile" | head -n1)install.sh"
     "$bats_installer" "$HOME/.bats"
 }
 install_bats
+
+function echo_path_code {
+    echo "# Added by eviltest"
+    echo "PATH=$HOME/.bats/bin:\$PATH"
+    echo "export PATH"
+    echo "# End by eviltest"
+
+}
+
+function rm_old_path_code {
+
+    local shprof=$1
+    local tmpfile
+    local B
+    local E
+
+    B=$(grep -n "# Added by eviltest" "$shprof" | cut -f1 -d':' | head -n1)
+    E=$(grep -n "# End by eviltest" "$shprof" | cut -f1 -d':' | head -n1)
+
+    if ((E - B == 3)); then
+        cp "$shprof" "$shprof".bak
+        tmpfile=$(mktemp)
+        {
+            head -n$((B - 1)) "$shprof"
+            tail -n +$((E + 1)) "$shprof"
+        } >"$tmpfile"
+        mv "$tmpfile" "$shprof"
+    fi
+}
+
+function edit_shell_profile {
+    local shprof
+    local shell
+
+    shell=$(get_shell)
+
+    if [ "$shell" = "fish" ]; then
+        fish -c "fish_add_path \"$HOME/.bats/bin\""
+    elif [ "$shell" = "zsh" ]; then
+        shprof="$HOME/.zprofile"
+        rm_old_path_code "$shprof"
+        echo_path_code >>"$shprof"
+    else
+        for name in .profile .bash_profile; do
+            shprof="$HOME/$name"
+            if test -f "$shprof"; then
+                rm_old_path_code "$shprof"
+                echo_path_code >>"$shprof"
+                break
+            fi
+        done
+    fi
+}
+
+edit_shell_profile

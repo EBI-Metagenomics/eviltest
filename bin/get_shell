@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+function getpid {
+    ps -p $$ -o ppid=
+}
+
+function getppid {
+    ps -p "$1" -o ppid=
+}
+
+topshell=
+
+pid=$(getpid)
+while ((pid > 1)); do
+    pid=$(getppid "$pid")
+    word=$(basename "$(ps -o comm= -p "$pid" | sed 's/-//g')")
+    if [[ "$word" =~ ^(sh|bash|zsh|fish)$ ]]; then
+        topshell="$word"
+    fi
+done
+
+echo "$topshell"
