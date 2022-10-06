@@ -3,4 +3,5 @@
 PATH=$(PWD)/bin:$PATH
 export PATH
 
-install_bats
+install_bats || exit 1
+install_libs || exit 1
