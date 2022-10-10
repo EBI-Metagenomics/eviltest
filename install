@@ -153,8 +153,8 @@ function unpack_from_url() {
 
 # Install daemonize
 {
-    url="https://github.com/EBI-Metagenomics/daemonize/releases/download/v0.1.5/daemonize-0.1.5.tar.gz"
-    sha256=717ad97238b8ccf128c09fab3e59937096bc78afd18f87bf7bcfbf9f1173fc4a
+    url="https://github.com/EBI-Metagenomics/daemonize/releases/download/v0.1.6/daemonize-0.1.6.tar.gz"
+    sha256=0931905cd2dfb36bd13767033879530202bf603f61261d66618b124b0776141d
 
     cd "$tmpdir"
     tardir=$(unpack_from_url "$url" "$sha256")
