@@ -1,5 +1,0 @@
-#!/bin/bash
-
-url=$1
-
-curl --head --location --remote-name --write-out '%{filename_effective}' "$url" 2>/dev/null

@@ -1,6 +1,0 @@
-#!/bin/bash
-
-for lib in support assert file; do
-    rm -rf "$HOME/.bats/lib/bats-$lib"
-    git clone https://github.com/bats-core/bats-"$lib".git "$HOME/.bats/lib/bats-$lib"
-done
