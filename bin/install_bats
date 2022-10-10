@@ -16,23 +16,8 @@ function cleanup {
 trap cleanup EXIT
 
 cd "$tmpdir"
-tarfile=$(resolve_url_filename "$url")
-shafile=$tarfile.sha256
-
-function fetch_bats {
-    echo "$sha256  $tarfile" >"$shafile"
-    curl --no-progress-meter -OL "$url"
-    sha256sum -c "$shafile"
-    tar xzf "$tarfile"
-}
-fetch_bats
-
-function install_bats {
-    local bats_installer
-    bats_installer="$(tar -tf "$tarfile" | head -n1)install.sh"
-    "$bats_installer" "$HOME/.bats"
-}
-install_bats
+tardir=$(unpack_from_url "$url" "$sha256")
+"$tardir/install.sh" "$HOME/.bats"
 
 function echo_path_code {
     echo "# Added by eviltest"

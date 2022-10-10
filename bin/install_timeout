@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+test -d "$(PWD)"
+
+url="https://github.com/horta/timeout/releases/download/v0.0.1/timeout-0.0.1.tar.gz"
+sha256=1a2fe55c7c59967a63dc12cddff7196bb11bdca7971d716dc69c2113e0435be4
+tmpdir=$(PWD)/.eviltest
+
+rm -rf "$tmpdir"
+mkdir -p "$tmpdir"
+
+function cleanup {
+    rm -rf "$tmpdir"
+}
+trap cleanup EXIT
+
+cd "$tmpdir"
+tardir=$(unpack_from_url "$url" "$sha256")
+cd "$tardir"
+PREFIX=$HOME/.bats make install

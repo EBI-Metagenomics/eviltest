@@ -4,4 +4,6 @@ PATH=$(PWD)/bin:$PATH
 export PATH
 
 install_bats || exit 1
-install_libs || exit 1
+install_bats_libs || exit 1
+install_daemonize || exit 1
+install_timeout || exit 1

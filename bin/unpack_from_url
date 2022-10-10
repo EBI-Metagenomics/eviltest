@@ -1,0 +1,16 @@
+#!/bin/bash
+
+url=$1
+sha256=$2
+
+tarfile=$(resolve_url_filename "$url")
+shafile=$tarfile.sha256
+
+echo "$sha256  $tarfile" >"$shafile"
+curl --no-progress-meter -OL "$url"
+sha256sum -c "$shafile" >/dev/null
+tardir=$(tar -tf "$tarfile" | head -n1)
+tardir=$(basename "$tardir")
+tar xzf "$tarfile"
+
+echo "$tardir"
