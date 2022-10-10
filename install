@@ -153,8 +153,8 @@ function unpack_from_url() {
 
 # Install daemonize
 {
-    url="https://github.com/EBI-Metagenomics/daemonize/releases/download/v0.1.4/daemonize-0.1.4.tar.gz"
-    sha256=8cc2c8d0b3b299fe8fd5f4b76b260a03ce6a57102e5c3cafc1c089275e60634f
+    url="https://github.com/EBI-Metagenomics/daemonize/releases/download/v0.1.5/daemonize-0.1.5.tar.gz"
+    sha256=717ad97238b8ccf128c09fab3e59937096bc78afd18f87bf7bcfbf9f1173fc4a
 
     cd "$tmpdir"
     tardir=$(unpack_from_url "$url" "$sha256")
@@ -164,8 +164,8 @@ function unpack_from_url() {
 
 # Install timeout
 {
-    url="https://github.com/EBI-Metagenomics/timeout/releases/download/v0.0.2/timeout-0.0.2.tar.gz"
-    sha256=8cc2c8d0b3b299fe8fd5f4b76b260a03ce6a57102e5c3cafc1c089275e60634f
+    url="https://github.com/EBI-Metagenomics/timeout/releases/download/v0.0.3/timeout-0.0.3.tar.gz"
+    sha256=1232c37d34b137e930ffe25c7388894cd487a478982dffb24228bb11955bfd09
 
     cd "$tmpdir"
     tardir=$(unpack_from_url "$url" "$sha256")
