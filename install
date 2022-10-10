@@ -1,9 +1,174 @@
 #!/bin/bash
 
-PATH=$(PWD)/bin:$PATH
-export PATH
+set -e
+test -d "$(PWD)"
 
-install_bats || exit 1
-install_bats_libs || exit 1
-install_daemonize || exit 1
-install_timeout || exit 1
+# Prepare temporary dir
+tmpdir=$(PWD)/.eviltest
+rm -rf "$tmpdir"
+mkdir -p "$tmpdir"
+
+function cleanup {
+    rm -rf "$tmpdir"
+}
+trap cleanup EXIT
+
+function get_shell() {
+    function getpid {
+        ps -p $$ -o ppid=
+    }
+
+    function getppid {
+        ps -p "$1" -o ppid=
+    }
+
+    topshell=
+
+    pid=$(getpid)
+    while ((pid > 1)); do
+        pid=$(getppid "$pid")
+        word=$(basename "$(ps -o comm= -p "$pid" | sed 's/-//g')")
+        if [[ "$word" =~ ^(sh|bash|zsh|fish)$ ]]; then
+            topshell="$word"
+        fi
+    done
+
+    echo "$topshell"
+}
+
+function resolve_url_filename() {
+    url=$1
+    curl --head --location --remote-name --write-out '%{filename_effective}' "$url" 2>/dev/null
+}
+
+function unpack_from_url() {
+    url=$1
+    sha256=$2
+
+    tarfile=$(resolve_url_filename "$url")
+    shafile=$tarfile.sha256
+
+    echo "$sha256  $tarfile" >"$shafile"
+    curl --no-progress-meter -OL "$url"
+    sha256sum -c "$shafile" >/dev/null
+    tardir=$(tar -tf "$tarfile" | head -n1)
+    tardir=$(basename "$tardir")
+    tar xzf "$tarfile"
+
+    echo "$tardir"
+}
+
+# Install BATS
+{
+    url="https://github.com/bats-core/bats-core/archive/v1.8.0.tar.gz"
+    sha256="0d4c44823905af5e52a92f9164595c183fb0d0b43b0c4e9c9acf794af20468b7"
+
+    cd "$tmpdir"
+    tardir=$(unpack_from_url "$url" "$sha256")
+    "$tardir/install.sh" "$HOME/.bats"
+
+    function echo_path_code {
+        echo "# Added by eviltest"
+        echo "PATH=$HOME/.bats/bin:\$PATH"
+        echo "BATS_LIB_PATH=$HOME/.bats/lib"
+        echo "export BATS_LIB_PATH"
+        echo "export PATH"
+        echo "# End by eviltest"
+
+    }
+
+    function echo_path_code_fish {
+        echo "# Added by eviltest"
+        echo "fish_add_path -g \"$HOME/.bats/bin\""
+        echo "set -gx BATS_LIB_PATH \"$HOME/.bats/lib\""
+        echo "# End by eviltest"
+    }
+
+    function rm_old_path_code {
+
+        local shprof=$1
+        local size=$2
+        local tmpfile
+        local B
+        local E
+
+        B=$(grep -n "# Added by eviltest" "$shprof" | cut -f1 -d':' | head -n1)
+        E=$(grep -n "# End by eviltest" "$shprof" | cut -f1 -d':' | head -n1)
+
+        if ((E - B == size - 1)); then
+            cp "$shprof" "$shprof".bak
+            tmpfile=$(mktemp)
+            {
+                head -n$((B - 1)) "$shprof"
+                tail -n +$((E + 1)) "$shprof"
+            } >"$tmpfile"
+            mv "$tmpfile" "$shprof"
+        fi
+    }
+
+    function edit_shell_profile {
+        local shprof
+        local shell
+        local size
+
+        shell=$(get_shell)
+
+        if [ "$shell" = "fish" ]; then
+            shprof=$HOME/.config/fish/config.fish
+
+            size=$(echo_path_code_fish | wc -l | xargs)
+            rm_old_path_code "$shprof" "$size"
+            echo_path_code_fish >>"$shprof"
+
+        elif [ "$shell" = "zsh" ]; then
+            shprof=$HOME/.zprofile
+
+            size=$(echo_path_code | wc -l | xargs)
+            rm_old_path_code "$shprof" "$size"
+
+            echo_path_code >>"$shprof"
+        else
+            for name in .profile .bash_profile .bashrc; do
+                shprof=$HOME/$name
+                if test -f "$shprof"; then
+                    size=$(echo_path_code_fish | wc -l | xargs)
+                    rm_old_path_code "$shprof" "$size"
+                    echo_path_code >>"$shprof"
+                    break
+                fi
+            done
+        fi
+    }
+
+    edit_shell_profile
+}
+
+# Install BATS libraries
+{
+    for lib in support assert file; do
+        rm -rf "$HOME/.bats/lib/bats-$lib"
+        git clone https://github.com/bats-core/bats-"$lib".git "$HOME/.bats/lib/bats-$lib"
+    done
+}
+
+# Install daemonize
+{
+    url="https://github.com/EBI-Metagenomics/daemonize/releases/download/v0.1.4/daemonize-0.1.4.tar.gz"
+    sha256=8cc2c8d0b3b299fe8fd5f4b76b260a03ce6a57102e5c3cafc1c089275e60634f
+
+    cd "$tmpdir"
+    tardir=$(unpack_from_url "$url" "$sha256")
+    cd "$tardir"
+    PREFIX=$HOME/.bats make install
+}
+
+# Install timeout
+{
+    url="https://github.com/EBI-Metagenomics/timeout/releases/download/v0.0.2/timeout-0.0.2.tar.gz"
+    sha256=8cc2c8d0b3b299fe8fd5f4b76b260a03ce6a57102e5c3cafc1c089275e60634f
+
+    cd "$tmpdir"
+    tardir=$(unpack_from_url "$url" "$sha256")
+    cd "$tardir"
+    PREFIX=$HOME/.bats make install
+}
