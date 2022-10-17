@@ -13,8 +13,6 @@ function cleanup {
 }
 trap cleanup EXIT
 
-alias ppid='ps -o ppid= -p'
-
 function get_shell() {
     local topshell="sh"
     pid=$$
@@ -23,7 +21,7 @@ function get_shell() {
         if [[ "$word" =~ ^(sh|bash|zsh|fish)$ ]]; then
             topshell="$word"
         fi
-        pid=$(ppid "$pid")
+        pid=$(ps -o ppid= -p "$pid")
     done
 
     echo "$topshell"
