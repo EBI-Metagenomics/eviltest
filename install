@@ -22,6 +22,7 @@ function get_shell() {
             topshell="$word"
         fi
         pid=$(ps -o ppid= -p "$pid")
+        pid=$(echo "$pid" | xargs)
     done
 
     echo "$topshell"
